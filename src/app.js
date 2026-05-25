@@ -4,6 +4,7 @@ import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import authRoutes from "./routes/auth.routes.js";
 import workspaceRoutes from "./routes/workspace.routes.js";
+import projectRoutes from "./routes/project.routes.js";
 
 const app = express();
 
@@ -26,5 +27,7 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authRoutes);
 
 app.use("/api/workspaces", workspaceRoutes);
+
+app.use("/api/projects", projectRoutes);
 
 export default app;
