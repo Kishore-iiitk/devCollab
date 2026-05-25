@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import authRoutes from "./routes/auth.routes.js";
 import workspaceRoutes from "./routes/workspace.routes.js";
 import projectRoutes from "./routes/project.routes.js";
+import taskRoutes from "./routes/task.routes.js";
 
 const app = express();
 
@@ -29,5 +30,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/workspaces", workspaceRoutes);
 
 app.use("/api/projects", projectRoutes);
+
+app.use("/api/tasks", taskRoutes);
 
 export default app;
