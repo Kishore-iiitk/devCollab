@@ -7,6 +7,7 @@ import workspaceRoutes from "./routes/workspace.routes.js";
 import projectRoutes from "./routes/project.routes.js";
 import taskRoutes from "./routes/task.routes.js";
 import aiRoutes from "./routes/ai.routes.js";
+import codeReviewRoutes from "./routes/codeReview.routes.js";
 
 const app = express();
 
@@ -27,5 +28,6 @@ app.use("/api/workspaces", workspaceRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/code-review", codeReviewRoutes);
 
 export default app;
