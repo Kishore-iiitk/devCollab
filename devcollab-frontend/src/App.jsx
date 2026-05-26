@@ -12,6 +12,8 @@ import ProtectedRoute from "./routes/ProtectedRoute";
 
 import DashboardLayout from "./layouts/DashboardLayout";
 
+import WorkspacePage from "./pages/WorkspacePage";
+
 function App() {
   return (
     <BrowserRouter>
@@ -28,7 +30,7 @@ function App() {
             </ProtectedRoute>
           }
         >
-          <Route index element={<HomePage />} />
+          <Route index element={<WorkspacePage />} />
         </Route>
       </Routes>
     </BrowserRouter>
