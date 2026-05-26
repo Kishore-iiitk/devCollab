@@ -9,6 +9,7 @@ import taskRoutes from "./routes/task.routes.js";
 import aiRoutes from "./routes/ai.routes.js";
 import codeReviewRoutes from "./routes/codeReview.routes.js";
 import activityRoutes from "./routes/activity.routes.js";
+import wikiRoutes from "./routes/wiki.routes.js";
 
 const app = express();
 
@@ -31,5 +32,6 @@ app.use("/api/tasks", taskRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/code-review", codeReviewRoutes);
 app.use("/api/activity", activityRoutes);
+app.use("/api/wiki", wikiRoutes);
 
 export default app;
