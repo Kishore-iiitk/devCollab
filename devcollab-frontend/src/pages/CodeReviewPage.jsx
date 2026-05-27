@@ -177,7 +177,7 @@ function CodeReviewPage() {
                   ),
                 }}
               >
-                {result}
+                {String(result).replace(/\\n/g, "\n")}
               </ReactMarkdown>
             </div>
           </div>
