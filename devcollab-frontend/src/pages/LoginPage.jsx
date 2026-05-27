@@ -38,16 +38,23 @@ function LoginPage() {
 
       <div className="w-full max-w-sm animate-fadein relative">
         {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center overflow-hidden shadow-lg shadow-indigo-500/20">
+        <div className="flex flex-col items-center mb-8">
+          
+          <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center overflow-hidden shadow-lg shadow-indigo-500/20 mb-4">
             <img
               src="/logo.png"
               alt="DevCollab"
               className="w-7 h-7 object-contain translate-x-[1px]"
             />
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Sign in to DevCollab</h1>
-          <p className="text-slate-400 text-sm mt-1">Your collaborative dev workspace</p>
+
+          <h1 className="text-2xl font-bold text-white tracking-tight text-center">
+            Sign in to DevCollab
+          </h1>
+
+          <p className="text-slate-400 text-sm mt-1 text-center">
+            Your collaborative dev workspace
+          </p>
         </div>
 
         <form
