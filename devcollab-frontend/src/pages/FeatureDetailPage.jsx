@@ -325,11 +325,10 @@ export default function FeatureDetailPage() {
             {/* All Tasks Chip */}
             <div
               onClick={() => selectFilter("all")}
-              className={`flex-shrink-0 w-48 p-3.5 rounded-xl border cursor-pointer transition-all ${
-                milestoneFilter === "all"
+              className={`shrink-0 w-48 p-3.5 rounded-xl border cursor-pointer transition-all ${milestoneFilter === "all"
                   ? "bg-indigo-500/10 border-indigo-500/60 ring-1 ring-indigo-500/30"
                   : "bg-[#0d1117] border-[#1e2535] hover:border-slate-700"
-              }`}
+                }`}
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-semibold text-white">All tasks</span>
@@ -348,11 +347,10 @@ export default function FeatureDetailPage() {
             {/* No Milestone Chip */}
             <div
               onClick={() => selectFilter("none")}
-              className={`flex-shrink-0 w-48 p-3.5 rounded-xl border cursor-pointer transition-all ${
-                milestoneFilter === "none"
+              className={`shrink-0 w-48 p-3.5 rounded-xl border cursor-pointer transition-all ${milestoneFilter === "none"
                   ? "bg-indigo-500/10 border-indigo-500/60 ring-1 ring-indigo-500/30"
                   : "bg-[#0d1117] border-[#1e2535] hover:border-slate-700"
-              }`}
+                }`}
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-semibold text-slate-300">
@@ -383,15 +381,14 @@ export default function FeatureDetailPage() {
                 <div
                   key={m._id}
                   onClick={() => selectFilter(m._id)}
-                  className={`flex-shrink-0 w-56 p-3.5 rounded-xl border cursor-pointer transition-all relative group flex flex-col justify-between ${
-                    isSelected
+                  className={`shrink-0 w-56 p-3.5 rounded-xl border cursor-pointer transition-all relative group flex flex-col justify-between ${isSelected
                       ? "bg-indigo-500/10 border-indigo-500/60 ring-1 ring-indigo-500/30"
                       : "bg-[#0d1117] border-[#1e2535] hover:border-slate-700"
-                  }`}
+                    }`}
                 >
                   <div>
                     <div className="flex items-start justify-between gap-1 mb-1">
-                      <span className="text-xs font-semibold text-white truncate max-w-[150px]">
+                      <span className="text-xs font-semibold text-white truncate max-w-37.5">
                         {m.name}
                       </span>
                       {isManager && (
