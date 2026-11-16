@@ -5,6 +5,8 @@ import cookieParser from "cookie-parser";
 import authRoutes from "./routes/auth.routes.js";
 import workspaceRoutes from "./routes/workspace.routes.js";
 import projectRoutes from "./routes/project.routes.js";
+import featureRoutes from "./routes/feature.routes.js";
+import milestoneRoutes from "./routes/milestone.routes.js";
 import taskRoutes from "./routes/task.routes.js";
 import aiRoutes from "./routes/ai.routes.js";
 import codeReviewRoutes from "./routes/codeReview.routes.js";
@@ -28,6 +30,8 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/workspaces", workspaceRoutes);
 app.use("/api/projects", projectRoutes);
+app.use("/api/features", featureRoutes);
+app.use("/api/milestones", milestoneRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/code-review", codeReviewRoutes);

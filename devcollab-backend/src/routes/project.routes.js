@@ -22,17 +22,17 @@ const router = express.Router();
 router.post("/", protect, requireWorkspaceRole("Member"), createProject);
 
 router.get(
-  "/:workspaceId",
-  protect,
-  requireWorkspaceRole("Viewer"),
-  getWorkspaceProjects,
-);
-
-router.get(
   "/detail/:projectId",
   protect,
   requireProjectRole("Viewer"),
   getProjectById,
+);
+
+router.get(
+  "/:workspaceId",
+  protect,
+  requireWorkspaceRole("Viewer"),
+  getWorkspaceProjects,
 );
 
 router.delete(

@@ -58,6 +58,16 @@ const taskSchema = new mongoose.Schema(
       required: true,
     },
 
+    feature: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Feature",
+    },
+
+    milestone: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Milestone",
+    },
+
     assignee: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -75,6 +85,10 @@ const taskSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+taskSchema.index({ project: 1, milestone: 1 });
+taskSchema.index({ feature: 1 });
+taskSchema.index({ feature: 1, milestone: 1 });
 
 const Task = mongoose.model("Task", taskSchema);
 

@@ -9,6 +9,7 @@ import {
 import {
   createTask,
   getProjectTasks,
+  updateTask,
   updateTaskStatus,
   addComment,
   deleteTask,
@@ -31,6 +32,13 @@ router.patch(
   protect,
   requireProjectRoleViaTask("Member"),
   updateTaskStatus,
+);
+
+router.patch(
+  "/:taskId",
+  protect,
+  requireProjectRoleViaTask("Member"),
+  updateTask,
 );
 
 router.post(
