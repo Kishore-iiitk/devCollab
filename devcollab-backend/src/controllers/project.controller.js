@@ -4,6 +4,8 @@ import User from "../models/user.model.js";
 import { logActivity } from "../services/activity.service.js";
 import Task from "../models/task.model.js";
 import Wiki from "../models/wiki.model.js";
+import Feature from "../models/feature.model.js";
+import Milestone from "../models/milestone.model.js";
 
 export const createProject = async (req, res) => {
   try {
@@ -105,6 +107,14 @@ export const deleteProject = async (req, res) => {
     }
 
     await Task.deleteMany({
+      project: projectId,
+    });
+
+    await Feature.deleteMany({
+      project: projectId,
+    });
+
+    await Milestone.deleteMany({
       project: projectId,
     });
 

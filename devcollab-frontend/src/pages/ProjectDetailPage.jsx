@@ -1,18 +1,18 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import TaskPage from "./TaskPage";
+import FeaturesPage from "./FeaturesPage";
 import WikiPage from "./WikiPage";
 import RoleBadge from "../components/RoleBadge";
 import { getProject } from "../services/project.service";
 import { useToast } from "../context/ToastContext";
 
-const TABS = ["Tasks", "Wiki"];
+const TABS = ["Features", "Wiki"];
 
 function ProjectDetailPage() {
   const { workspaceId, projectId } = useParams();
   const navigate = useNavigate();
   const toast = useToast();
-  const [tab, setTab] = useState("Tasks");
+  const [tab, setTab] = useState("Features");
   const [role, setRole] = useState("Viewer");
   const [loaded, setLoaded] = useState(false);
 
@@ -68,7 +68,7 @@ function ProjectDetailPage() {
       </div>
 
       {/* Content */}
-      {loaded && tab === "Tasks" && <TaskPage role={role} />}
+      {loaded && tab === "Features" && <FeaturesPage role={role} />}
       {loaded && tab === "Wiki" && <WikiPage role={role} />}
     </div>
   );

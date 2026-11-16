@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import {
   DndContext,
   DragOverlay,
@@ -12,6 +12,7 @@ import {
 import {
   getTasks,
   createTask,
+  updateTask,
   updateTaskStatus,
   addComment,
   deleteTask,
@@ -22,10 +23,9 @@ import { useAuth } from "../context/AuthContext";
 import Modal from "../components/Modal";
 import Button from "../components/Button";
 import Select from "../components/Select";
-import { StatusBadge, PriorityBadge } from "../components/Badge";
 import { canWrite, canManage } from "../utils/roles";
 
-// ── Exact values from your backend task.model.js ──────────────────
+// ── Exact values from backend task.model.js ──────────────────────
 const COLUMNS = [
   { id: "To Do", label: "To Do", color: "text-slate-400", dot: "bg-slate-500" },
   {
@@ -48,7 +48,6 @@ const COLUMNS = [
   },
 ];
 
-// P0 = most urgent, P2 = lowest
 const PRIORITIES = [
   { value: "P0", label: "P0 — Critical" },
   { value: "P1", label: "P1 — Medium" },
@@ -68,22 +67,27 @@ const STATUS_STYLES = {
   Done: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
 };
 
-// ── Card content, shared between the board and the drag overlay ────
 function TaskCardContent({ task }) {
   return (
     <>
       <p className="text-sm font-medium text-white mb-2 leading-snug">
         {task.title}
       </p>
-      <div className="flex flex-wrap gap-1.5">
+      <div className="flex flex-wrap items-center gap-1.5">
         <span
-          className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border ${PRIORITY_STYLES[task.priority] || PRIORITY_STYLES.P1}`}
+          className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border ${PRIORITY_STYLES[task.priority] || PRIORITY_STYLES.P1
+            }`}
         >
           {task.priority || "P1"}
         </span>
         {task.dueDate && (
           <span className="text-xs text-slate-500 font-mono">
             {new Date(task.dueDate).toLocaleDateString()}
+          </span>
+        )}
+        {task.milestone && (
+          <span className="text-[11px] bg-indigo-500/10 text-indigo-300 px-1.5 py-0.5 rounded border border-indigo-500/20 truncate max-w-30">
+            ⚐ {task.milestone.name || "Milestone"}
           </span>
         )}
       </div>
@@ -106,7 +110,6 @@ function TaskCardContent({ task }) {
   );
 }
 
-// ── Draggable card ───────────────────────────────────────────────
 function DraggableTaskCard({ task, onOpen, disabled }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: task._id,
@@ -120,34 +123,37 @@ function DraggableTaskCard({ task, onOpen, disabled }) {
       {...attributes}
       {...listeners}
       onClick={() => onOpen(task)}
-      className={`bg-[#0d1117] border border-[#1e2535] hover:border-indigo-500/30 rounded-xl p-3.5 transition-all hover:shadow-md animate-fadein ${
-        disabled ? "cursor-pointer" : "cursor-grab active:cursor-grabbing"
-      } ${isDragging ? "opacity-30" : ""}`}
+      className={`bg-[#0d1117] border border-[#1e2535] hover:border-indigo-500/30 rounded-xl p-3.5 transition-all hover:shadow-md animate-fadein ${disabled ? "cursor-pointer" : "cursor-grab active:cursor-grabbing"
+        } ${isDragging ? "opacity-30" : ""}`}
     >
       <TaskCardContent task={task} />
     </div>
   );
 }
 
-// ── Droppable column ─────────────────────────────────────────────
 function DroppableColumn({ col, children }) {
   const { setNodeRef, isOver } = useDroppable({ id: col.id });
 
   return (
     <div
       ref={setNodeRef}
-      className={`flex flex-col gap-2 min-h-[120px] rounded-2xl p-1.5 -m-1.5 transition-colors ${
-        isOver ? "bg-indigo-500/[0.06] ring-1 ring-indigo-500/40" : ""
-      }`}
+      className={`flex flex-col gap-2 min-h-30 rounded-2xl p-1.5 -m-1.5 transition-colors ${isOver ? "bg-indigo-500/6 ring-1 ring-indigo-500/40" : ""
+        }`}
     >
       {children}
     </div>
   );
 }
 
-function TaskPage({ role = "Viewer" }) {
-  const { workspaceId, projectId } = useParams();
-  const navigate = useNavigate();
+function TaskPage({
+  role = "Viewer",
+  featureId,
+  milestones = [],
+  milestoneFilter = "all",
+  context = {},
+  onTasksChange,
+}) {
+  const { projectId } = useParams();
   const toast = useToast();
   const confirmDialog = useConfirm();
   const { user } = useAuth();
@@ -166,9 +172,14 @@ function TaskPage({ role = "Viewer" }) {
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: { distance: 8 }, // lets clicks-to-open still work
-    }),
+      activationConstraint: { distance: 8 },
+    })
   );
+
+  const defaultMilestoneId =
+    milestoneFilter && milestoneFilter !== "all" && milestoneFilter !== "none"
+      ? milestoneFilter
+      : "";
 
   const [form, setForm] = useState({
     title: "",
@@ -176,15 +187,17 @@ function TaskPage({ role = "Viewer" }) {
     priority: "P1",
     dueDate: "",
     labels: "",
-    // assignee is intentionally removed — needs real ObjectId
+    milestoneId: defaultMilestoneId,
   });
 
   const fetchTasks = async () => {
     try {
-      const data = await getTasks(projectId);
-      setTasks(data.tasks || []);
-    } catch {
-      toast("Failed to load tasks", "error");
+      const data = await getTasks(projectId, featureId ? { featureId } : {});
+      const allTasks = data.tasks || [];
+      setTasks(allTasks);
+      if (onTasksChange) onTasksChange(allTasks);
+    } catch (err) {
+      toast(err.response?.data?.message || "Failed to load tasks", "error");
     } finally {
       setLoading(false);
     }
@@ -192,7 +205,7 @@ function TaskPage({ role = "Viewer" }) {
 
   useEffect(() => {
     fetchTasks();
-  }, [projectId]);
+  }, [projectId, featureId, milestones]);
 
   // Keep detailTask in sync when tasks list updates
   useEffect(() => {
@@ -214,13 +227,17 @@ function TaskPage({ role = "Viewer" }) {
         dueDate: form.dueDate || undefined,
         labels: form.labels
           ? form.labels
-              .split(",")
-              .map((l) => l.trim())
-              .filter(Boolean)
+            .split(",")
+            .map((l) => l.trim())
+            .filter(Boolean)
           : [],
         projectId,
-        // assignee intentionally omitted — needs a MongoDB ObjectId
+        featureId,
       };
+      if (form.milestoneId) {
+        body.milestoneId = form.milestoneId;
+      }
+
       await createTask(body);
       toast("Task created!", "success");
       setCreateModal(false);
@@ -230,20 +247,24 @@ function TaskPage({ role = "Viewer" }) {
         priority: "P1",
         dueDate: "",
         labels: "",
+        milestoneId: defaultMilestoneId,
       });
       fetchTasks();
     } catch (err) {
       toast(err.response?.data?.message || "Failed to create task", "error");
+    } finally {
+      setSubmitting(false);
     }
-    setSubmitting(false);
   };
 
   const handleStatusChange = async (taskId, status) => {
     try {
       await updateTaskStatus(taskId, status);
-      setTasks((prev) =>
-        prev.map((t) => (t._id === taskId ? { ...t, status } : t)),
-      );
+      setTasks((prev) => {
+        const next = prev.map((t) => (t._id === taskId ? { ...t, status } : t));
+        if (onTasksChange) onTasksChange(next);
+        return next;
+      });
     } catch (err) {
       toast(err.response?.data?.message || "Failed to update status", "error");
     }
@@ -264,15 +285,16 @@ function TaskPage({ role = "Viewer" }) {
     const task = tasks.find((t) => t._id === taskId);
     if (!task || task.status === newStatus) return;
 
-    // Optimistic update — the board reflects the move instantly, then
-    // we persist it, rolling back if the request fails.
     const prevTasks = tasks;
-    setTasks((prev) =>
-      prev.map((t) => (t._id === taskId ? { ...t, status: newStatus } : t)),
+    const nextTasks = tasks.map((t) =>
+      t._id === taskId ? { ...t, status: newStatus } : t
     );
+    setTasks(nextTasks);
+    if (onTasksChange) onTasksChange(nextTasks);
 
     updateTaskStatus(taskId, newStatus).catch((err) => {
       setTasks(prevTasks);
+      if (onTasksChange) onTasksChange(prevTasks);
       toast(err.response?.data?.message || "Failed to move task", "error");
     });
   };
@@ -283,7 +305,7 @@ function TaskPage({ role = "Viewer" }) {
       {
         title: "Delete this task?",
         confirmLabel: "Delete",
-      },
+      }
     );
     if (!ok) return;
     try {
@@ -292,7 +314,7 @@ function TaskPage({ role = "Viewer" }) {
       setDetailTask(null);
       fetchTasks();
     } catch (err) {
-      toast(err.response?.data?.message || "Failed to delete", "error");
+      toast(err.response?.data?.message || "Failed to delete task", "error");
     }
   };
 
@@ -302,21 +324,37 @@ function TaskPage({ role = "Viewer" }) {
     setAddingComment(true);
     try {
       const data = await addComment(detailTask._id, comment);
-      // backend returns the full updated task
       const updatedTask = data.task;
-      setTasks((prev) =>
-        prev.map((t) => (t._id === updatedTask._id ? updatedTask : t)),
-      );
+      setTasks((prev) => {
+        const next = prev.map((t) =>
+          t._id === updatedTask._id ? updatedTask : t
+        );
+        if (onTasksChange) onTasksChange(next);
+        return next;
+      });
       setDetailTask(updatedTask);
       setComment("");
-    } catch {
-      toast("Failed to add comment", "error");
+    } catch (err) {
+      toast(err.response?.data?.message || "Failed to add comment", "error");
+    } finally {
+      setAddingComment(false);
     }
-    setAddingComment(false);
   };
 
+  // Filter tasks displayed on the board
+  const displayedTasks = tasks.filter((t) => {
+    if (milestoneFilter === "none") {
+      return !t.milestone;
+    }
+    if (milestoneFilter && milestoneFilter !== "all") {
+      const mId = t.milestone?._id || t.milestone;
+      return String(mId) === String(milestoneFilter);
+    }
+    return true;
+  });
+
   const byStatus = (status) =>
-    tasks.filter((t) => (t.status || "To Do") === status);
+    displayedTasks.filter((t) => (t.status || "To Do") === status);
 
   if (loading) {
     return (
@@ -339,15 +377,24 @@ function TaskPage({ role = "Viewer" }) {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">
-            Tasks
-          </h1>
-          <p className="text-slate-400 text-sm mt-1">
-            {tasks.length} task{tasks.length !== 1 ? "s" : ""}
+          <h2 className="text-xl font-bold text-white tracking-tight">Board</h2>
+          <p className="text-slate-400 text-sm mt-0.5">
+            Showing {displayedTasks.length} of {tasks.length} task
+            {tasks.length !== 1 ? "s" : ""}
           </p>
         </div>
         {canCreate && (
-          <Button onClick={() => setCreateModal(true)}>+ New Task</Button>
+          <Button
+            onClick={() => {
+              setForm((f) => ({
+                ...f,
+                milestoneId: defaultMilestoneId,
+              }));
+              setCreateModal(true);
+            }}
+          >
+            + New Task
+          </Button>
         )}
       </div>
 
@@ -399,7 +446,7 @@ function TaskPage({ role = "Viewer" }) {
 
         <DragOverlay dropAnimation={{ duration: 180, easing: "ease-out" }}>
           {activeTask && (
-            <div className="bg-[#0d1117] border border-indigo-500/50 rounded-xl p-3.5 shadow-2xl shadow-black/50 rotate-2 w-[268px] cursor-grabbing">
+            <div className="bg-[#0d1117] border border-indigo-500/50 rounded-xl p-3.5 shadow-2xl shadow-black/50 rotate-2 w-67 cursor-grabbing">
               <TaskCardContent task={activeTask} />
             </div>
           )}
@@ -408,7 +455,11 @@ function TaskPage({ role = "Viewer" }) {
 
       {/* ── Create Task Modal ─────────────────────────── */}
       {createModal && (
-        <Modal title="New Task" onClose={() => setCreateModal(false)} size="lg">
+        <Modal
+          title="New Task"
+          onClose={() => setCreateModal(false)}
+          size="lg"
+        >
           <form onSubmit={handleCreate} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">
@@ -469,6 +520,20 @@ function TaskPage({ role = "Viewer" }) {
 
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">
+                Milestone (Optional)
+              </label>
+              <Select
+                value={form.milestoneId}
+                onChange={(v) => setForm((f) => ({ ...f, milestoneId: v }))}
+                options={[
+                  { value: "", label: "No milestone" },
+                  ...milestones.map((m) => ({ value: m._id, label: m.name })),
+                ]}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">
                 Labels (comma separated)
               </label>
               <input
@@ -505,15 +570,41 @@ function TaskPage({ role = "Viewer" }) {
           size="lg"
         >
           <div className="flex flex-col gap-5">
+            {/* Location block */}
+            <div className="bg-[#141a29] border border-[#232c42] rounded-xl p-3 flex flex-col gap-1.5 text-xs text-slate-400">
+              <span className="font-semibold text-slate-300 uppercase tracking-wider text-[10px]">
+                Location
+              </span>
+              <div className="flex items-center gap-1.5 flex-wrap text-slate-300">
+                <span className="text-slate-400">
+                  {context?.workspaceName || "Workspace"}
+                </span>
+                <span className="text-slate-600">→</span>
+                <span className="text-slate-400">
+                  {context?.projectName || "Project"}
+                </span>
+                <span className="text-slate-600">→</span>
+                <span className="text-indigo-300 font-medium">
+                  {context?.featureName || detailTask.feature?.name || "Feature"}
+                </span>
+                <span className="text-slate-600">→</span>
+                <span className="text-slate-300 font-medium">
+                  {detailTask.milestone?.name || "No milestone"}
+                </span>
+              </div>
+            </div>
+
             {/* Badges */}
             <div className="flex flex-wrap gap-2">
               <span
-                className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border ${STATUS_STYLES[detailTask.status] || STATUS_STYLES["To Do"]}`}
+                className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border ${STATUS_STYLES[detailTask.status] || STATUS_STYLES["To Do"]
+                  }`}
               >
                 {detailTask.status || "To Do"}
               </span>
               <span
-                className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border ${PRIORITY_STYLES[detailTask.priority] || PRIORITY_STYLES.P1}`}
+                className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border ${PRIORITY_STYLES[detailTask.priority] || PRIORITY_STYLES.P1
+                  }`}
               >
                 {detailTask.priority || "P1"}
               </span>
@@ -565,6 +656,45 @@ function TaskPage({ role = "Viewer" }) {
               </p>
             )}
 
+            {/* Change Milestone */}
+            {canCreate && (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  Milestone
+                </label>
+                <Select
+                  value={detailTask.milestone?._id || detailTask.milestone || ""}
+                  onChange={async (newMilestoneId) => {
+                    try {
+                      const res = await updateTask(detailTask._id, {
+                        milestoneId: newMilestoneId || null,
+                      });
+                      const updated = res.task;
+                      setTasks((prev) => {
+                        const next = prev.map((t) =>
+                          t._id === updated._id ? updated : t
+                        );
+                        if (onTasksChange) onTasksChange(next);
+                        return next;
+                      });
+                      setDetailTask(updated);
+                      toast("Milestone updated", "success");
+                    } catch (err) {
+                      toast(
+                        err.response?.data?.message ||
+                        "Failed to update milestone",
+                        "error"
+                      );
+                    }
+                  }}
+                  options={[
+                    { value: "", label: "No milestone" },
+                    ...milestones.map((m) => ({ value: m._id, label: m.name })),
+                  ]}
+                />
+              </div>
+            )}
+
             {/* Change Status */}
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-medium text-slate-400 uppercase tracking-wider">
@@ -602,7 +732,7 @@ function TaskPage({ role = "Viewer" }) {
                 )}
                 {detailTask.comments?.map((c, i) => (
                   <div key={i} className="flex gap-3">
-                    <div className="w-7 h-7 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-300 text-xs font-bold flex-shrink-0">
+                    <div className="w-7 h-7 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-300 text-xs font-bold shrink-0">
                       {(c.user?.name || "U").slice(0, 2).toUpperCase()}
                     </div>
                     <div className="flex-1 bg-[#1a2035] rounded-xl px-3 py-2.5">

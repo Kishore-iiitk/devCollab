@@ -88,7 +88,7 @@ function LoginPage() {
   return (
     <div className="min-h-screen bg-[#080b14] flex items-center justify-center p-4">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-3xl" />
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-125 h-125 bg-indigo-600/10 rounded-full blur-3xl" />
       </div>
 
       <div className="w-full max-w-sm animate-fadein relative">
@@ -97,7 +97,7 @@ function LoginPage() {
             <img
               src="/logo.png"
               alt="DevCollab"
-              className="w-7 h-7 object-contain translate-x-[1px]"
+              className="w-7 h-7 object-contain translate-x-px"
             />
           </div>
           <h1 className="text-2xl font-bold text-white tracking-tight">

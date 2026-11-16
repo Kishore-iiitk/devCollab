@@ -1,7 +1,10 @@
+import mongoose from "mongoose";
 import Workspace from "../models/workspace.model.js";
 import Project from "../models/project.model.js";
 import Task from "../models/task.model.js";
 import Wiki from "../models/wiki.model.js";
+import Feature from "../models/feature.model.js";
+import Milestone from "../models/milestone.model.js";
 
 // Higher number = more powerful role.
 // Workspace roles: Owner, Admin, Member, Viewer
@@ -22,6 +25,9 @@ export const requireWorkspaceRole =
       const workspaceId = req.params.workspaceId || req.body.workspaceId;
       if (!workspaceId) {
         return res.status(400).json({ message: "workspaceId is required" });
+      }
+      if (!mongoose.isValidObjectId(workspaceId)) {
+        return res.status(400).json({ message: "Invalid workspaceId" });
       }
 
       const workspace = await Workspace.findById(workspaceId);
@@ -75,6 +81,9 @@ export const requireProjectRole =
       const projectId = req.params.projectId || req.body.projectId;
       if (!projectId) {
         return res.status(400).json({ message: "projectId is required" });
+      }
+      if (!mongoose.isValidObjectId(projectId)) {
+        return res.status(400).json({ message: "Invalid projectId" });
       }
 
       const project = await Project.findById(projectId);
@@ -133,6 +142,9 @@ export const requireProjectRoleViaTask =
   (minRole = "Viewer") =>
   async (req, res, next) => {
     try {
+      if (!mongoose.isValidObjectId(req.params.taskId)) {
+        return res.status(400).json({ message: "Invalid taskId" });
+      }
       const task = await Task.findById(req.params.taskId);
       if (!task) return res.status(404).json({ message: "Task not found" });
       req.params.projectId = task.project.toString();
@@ -148,11 +160,52 @@ export const requireProjectRoleViaWiki =
   (minRole = "Viewer") =>
   async (req, res, next) => {
     try {
+      if (!mongoose.isValidObjectId(req.params.wikiId)) {
+        return res.status(400).json({ message: "Invalid wikiId" });
+      }
       const wiki = await Wiki.findById(req.params.wikiId);
       if (!wiki)
         return res.status(404).json({ message: "Wiki page not found" });
       req.params.projectId = wiki.project.toString();
       req.wiki = wiki;
+      return requireProjectRole(minRole)(req, res, next);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  };
+
+/** Resolves a Feature's project onto req.params.projectId, then defers to requireProjectRole. */
+export const requireProjectRoleViaFeature =
+  (minRole = "Viewer") =>
+  async (req, res, next) => {
+    try {
+      if (!mongoose.isValidObjectId(req.params.featureId)) {
+        return res.status(400).json({ message: "Invalid featureId" });
+      }
+      const feature = await Feature.findById(req.params.featureId);
+      if (!feature)
+        return res.status(404).json({ message: "Feature not found" });
+      req.params.projectId = feature.project.toString();
+      req.feature = feature;
+      return requireProjectRole(minRole)(req, res, next);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  };
+
+/** Resolves a Milestone's project onto req.params.projectId, then defers to requireProjectRole. */
+export const requireProjectRoleViaMilestone =
+  (minRole = "Viewer") =>
+  async (req, res, next) => {
+    try {
+      if (!mongoose.isValidObjectId(req.params.milestoneId)) {
+        return res.status(400).json({ message: "Invalid milestoneId" });
+      }
+      const milestone = await Milestone.findById(req.params.milestoneId);
+      if (!milestone)
+        return res.status(404).json({ message: "Milestone not found" });
+      req.params.projectId = milestone.project.toString();
+      req.milestone = milestone;
       return requireProjectRole(minRole)(req, res, next);
     } catch (error) {
       res.status(500).json({ message: error.message });

@@ -10,6 +10,7 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import WorkspacePage from "./pages/WorkspacePage";
 import ProjectPage from "./pages/ProjectPage";
 import ProjectDetailPage from "./pages/ProjectDetailPage";
+import FeatureDetailPage from "./pages/FeatureDetailPage";
 import AIPage from "./pages/AIPage";
 import CodeReviewPage from "./pages/CodeReviewPage";
 import NotFoundPage from "./pages/NotFoundPage";
@@ -44,6 +45,10 @@ function App() {
           <Route
             path="workspace/:workspaceId/project/:projectId"
             element={<ProjectDetailPage />}
+          />
+          <Route
+            path="workspace/:workspaceId/project/:projectId/feature/:featureId"
+            element={<FeatureDetailPage />}
           />
           <Route path="ai" element={<AIPage />} />
           <Route path="code-review" element={<CodeReviewPage />} />
